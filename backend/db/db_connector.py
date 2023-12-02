@@ -6,9 +6,8 @@ from sqlalchemy import create_engine, Table
 
 class Connector_DB:
     def __init__(
-        self, db_dialect, db_driver, db_address, db_port, db_name, db_user, db_password
+        self, db_driver, db_address, db_port, db_name, db_user, db_password
     ):
-        self.db_dialect = db_dialect
         self.db_driver = db_driver
         self.db_address = db_address
         self.db_port = db_port
@@ -17,7 +16,7 @@ class Connector_DB:
         self.db_password = db_password
         self.schema = "public"
         self.engine = create_engine(
-            f"{self.db_dialect}://{self.db_user}:{self.db_password}@{self.db_address}:{self.db_port}/{self.db_name}"
+            f"{self.db_driver}://{self.db_user}:{self.db_password}@{self.db_address}:{self.db_port}/{self.db_name}"
         )
         self.mapper_registry = registry()
 
