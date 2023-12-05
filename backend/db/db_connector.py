@@ -11,13 +11,12 @@ Classes:
 import logging
 import pandas as pd
 from sqlalchemy.orm import registry
-from sqlalchemy import create_engine, Table
+from sqlalchemy.dialects import postgresql
+from sqlalchemy import create_engine, Table, inspect
 
 
 class Connector_DB:
-    def __init__(
-        self, db_driver, db_address, db_port, db_name, db_user, db_password
-    ):
+    def __init__(self, db_driver, db_address, db_port, db_name, db_user, db_password):
         """
         Initialize a database connector.
 
@@ -86,3 +85,36 @@ class Connector_DB:
         except Exception as error:
             logging.error(f"Failed to write data to the database: {error}")
 
+    def upsert(self, table_name: str, df: pd.DataFrame) -> None:
+        """
+        Inserts DataFrame records into the database, updating existing records with matching keys or inserting new records if the key does not exist.
+
+        Args:
+            table_name (str): Name of the table.
+            df (DataFrame): Data to be saved in the database.
+
+        Returns:
+            None
+        """
+        insert_statement = postgresql.insert(self.get_table(table_name)).values(
+            df.to_dict("records")
+        )
+        primary_keys = [
+            key.name for key in inspect(self.get_table(table_name)).primary_key
+        ]
+
+        update_dict = {
+            c.name: c for c in insert_statement.excluded if not c.primary_key
+        }
+
+        if update_dict:
+            upsert_statement = insert_statement.on_conflict_do_update(
+                index_elements=primary_keys, set_=update_dict
+            )
+            with self.engine.connect() as conn:
+                conn.execute(upsert_statement)
+                logging.info(
+                    f"Update/New insertion of {len(df)} records into the table: {table_name}"
+                )
+        else:
+            logging.info(f"No data to update in the table: {table_name}")

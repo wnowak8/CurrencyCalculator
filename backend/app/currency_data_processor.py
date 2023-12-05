@@ -26,13 +26,14 @@ load_dotenv()
 CURRENCY_CODES = ["usd", "eur", "pln"]
 
 connector_db = Connector_DB(
-            db_driver=os.environ.get("POSTGRES_DRIVER"),
-            db_address=os.environ.get("POSTGRES_HOST"),
-            db_port=os.environ.get("POSTGRES_PORT"),
-            db_user=os.environ.get("POSTGRES_USER"),
-            db_password=os.environ.get("POSTGRES_PASSWORD"),
-            db_name=os.environ.get("POSTGRES_DATABASE"),
-        )
+    db_driver=os.environ.get("POSTGRES_DRIVER"),
+    db_address=os.environ.get("POSTGRES_HOST"),
+    db_port=os.environ.get("POSTGRES_PORT"),
+    db_user=os.environ.get("POSTGRES_USER"),
+    db_password=os.environ.get("POSTGRES_PASSWORD"),
+    db_name=os.environ.get("POSTGRES_DATABASE"),
+)
+
 
 def get_exchange_rates(currency_code: str):
     """
@@ -45,7 +46,9 @@ def get_exchange_rates(currency_code: str):
         pd.DataFrame or None: DataFrame containing exchange rates data if successful,
                               None if no data is available or an error occurs.
     """
-    NBP_URL = f"http://api.nbp.pl/api/exchangerates/rates/C/{currency_code}/?format=json"
+    NBP_URL = (
+        f"http://api.nbp.pl/api/exchangerates/rates/a/{currency_code}/?format=json"
+    )
 
     try:
         response = requests.get(NBP_URL)
@@ -57,11 +60,12 @@ def get_exchange_rates(currency_code: str):
             if rates:
                 df = pd.DataFrame(rates)
                 df["effectiveDate"] = pd.to_datetime(df["effectiveDate"])
-                df.drop('no', axis=1, inplace=True)
+                df.drop("no", axis=1, inplace=True)
                 df.rename(
-                    columns={"effectiveDate": "date"}, inplace=True
+                    columns={"effectiveDate": "date", "mid": "value"},
+                    inplace=True
                 )
-                df['currency'] = currency_code
+                df["currency"] = currency_code
                 return df
             else:
                 logging.warning("No data in the response.")
@@ -85,10 +89,11 @@ def send_df_to_db():
 
             if df is not None:
                 logging.debug(f"Data before sending: {df}")
-                connector_db.send_df_to_db(table_name=config.TABLE_NAME, df=df)
-                logging.info(f"Data for currency {currency_code} successfully sent to the database.")
+                connector_db.upsert(table_name=config.TABLE_NAME, df=df)
             else:
-                logging.warning(f"No data available for currency with code {currency_code}.")
+                logging.warning(
+                    f"No data available for currency with code {currency_code}."
+                )
     except Exception as e:
         logging.error(f"Error occurred during data processing: {str(e)}")
 
@@ -102,12 +107,12 @@ def get_record_from_db(currency_code: str):
 
         Returns:
             pd.DataFrame: DataFrame containing records that match the criteria.
-        """
+    """
     try:
         table = connector_db.get_table(table_name=config.TABLE_NAME)
-            
+
         query = table.select().where(table.c.currency == currency_code)
-            
+
         df = pd.read_sql_query(query, con=connector_db)
         return df
     except Exception as error:
@@ -126,8 +131,7 @@ def get_data_by_currency(currency_code):
         dict or None: A dictionary representing exchange rate data with keys:
             - "date": Date of the exchange rate.
             - "currency": Currency code.
-            - "bid": Bid rate.
-            - "ask": Ask rate.
+            - "value": Currency rate.
             None if no records are found.
     """
     df = connector_db.get_record_from_db(config.TABLE_NAME, currency_code)
@@ -137,8 +141,7 @@ def get_data_by_currency(currency_code):
         rate = {
             "date": str(row["date"]),
             "currency": row["currency"],
-            "bid": float(row["bid"]),
-            "ask": float(row["ask"])
+            "value": float(row["value"]),
         }
         return rate
     else:

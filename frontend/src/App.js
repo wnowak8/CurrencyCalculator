@@ -16,7 +16,7 @@ const CurrencyCalculator = () => {
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
-        const response = await fetch(
+        const response = await fetch(`http://backend:5000/rate/${fromCurrency.value}`
           
         );
         const data = await response.json();

@@ -19,7 +19,8 @@ Scheduled Job:
     - Fetches exchange rates data and sends it to the database at a specified interval.
 """
 from flask import Flask, jsonify, request
-from flask_apscheduler import APScheduler
+from flask_cors import CORS
+from apscheduler.schedulers.background import BackgroundScheduler
 
 import logging
 from app import config
@@ -33,7 +34,8 @@ logging.basicConfig(
 )
 
 flask_app = Flask(__name__)
-scheduler = APScheduler()
+CORS(flask_app)
+scheduler = BackgroundScheduler()
 
 
 @flask_app.route('/rate/<currency_code>', methods=['GET'])
@@ -48,12 +50,10 @@ def get_rate(currency_code):
         JSON: JSON response containing exchange rate data with keys:
             - "date": Date of the exchange rate.
             - "currency": Currency code.
-            - "bid": Bid rate.
-            - "ask": Ask rate.
+            - "value": Currency rate.
         If an error occurs, returns JSON with key "error".
     """
     try:
-        currency_code = request.args.get('currency_code')
         response_data = get_data_by_currency(currency_code)
         return jsonify(response_data)
 
@@ -63,6 +63,6 @@ def get_rate(currency_code):
 
 
 if __name__ == '__main__':
-    scheduler.add_job(id = 'Scheduled Task', func=send_df_to_db, trigger="interval", seconds=10)
+    scheduler.add_job(func=send_df_to_db, trigger="cron", hour=10, minute=21)
     scheduler.start()
     flask_app.run(debug=True)
