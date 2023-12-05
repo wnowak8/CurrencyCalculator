@@ -6,5 +6,5 @@ COPY backend/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-ENTRYPOINT ["python3", "backend/main.py"]
+COPY ./backend .
+ENTRYPOINT ["python3", "main.py"]

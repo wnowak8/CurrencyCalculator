@@ -1,10 +1,8 @@
 """
 Exchange Rate Data Processing Module
-
 This module contains functions for fetching exchange rates data from the NBP API,
 sending the data to a PostgreSQL database, and retrieving data from the database
 based on a specific currency code.
-
 Functions:
     - get_exchange_rates: Fetch exchange rates data from the NBP API for a specific currency code.
     - send_df_to_db: Retrieve exchange rates data for multiple currency codes and send it to the database.
@@ -16,15 +14,11 @@ import os
 import requests
 import pandas as pd
 from dotenv import load_dotenv
-
+from sqlalchemy import select
 from db.db_connector import Connector_DB
 from app import config
-
 load_dotenv()
-
-
-CURRENCY_CODES = ["usd", "eur", "pln"]
-
+CURRENCY_CODES = ["usd", "eur"]
 connector_db = Connector_DB(
     db_driver=os.environ.get("POSTGRES_DRIVER"),
     db_address=os.environ.get("POSTGRES_HOST"),
@@ -33,15 +27,11 @@ connector_db = Connector_DB(
     db_password=os.environ.get("POSTGRES_PASSWORD"),
     db_name=os.environ.get("POSTGRES_DATABASE"),
 )
-
-
 def get_exchange_rates(currency_code: str):
     """
     Fetch exchange rates data for a specific currency code from the NBP API.
-
     Args:
-        currency_code (str): The currency code (e.g., "usd", "eur", "pln").
-
+        currency_code (str): The currency code (e.g., "usd", "eur").
     Returns:
         pd.DataFrame or None: DataFrame containing exchange rates data if successful,
                               None if no data is available or an error occurs.
@@ -49,14 +39,11 @@ def get_exchange_rates(currency_code: str):
     NBP_URL = (
         f"http://api.nbp.pl/api/exchangerates/rates/a/{currency_code}/?format=json"
     )
-
     try:
         response = requests.get(NBP_URL)
-
         if response.status_code == 200:
             data = response.json()
             rates = data.get("rates", [])
-
             if rates:
                 df = pd.DataFrame(rates)
                 df["effectiveDate"] = pd.to_datetime(df["effectiveDate"])
@@ -71,22 +58,17 @@ def get_exchange_rates(currency_code: str):
                 logging.warning("No data in the response.")
         else:
             logging.error(f"Error while fetching data: {response.status_code}")
-
     except Exception as e:
         logging.error(f"Error during data retrieval: {str(e)}")
-
-
 def send_df_to_db():
     """
     Retrieve exchange rates data for multiple currency codes and send it to the database.
-
     Raises:
         Exception: If an error occurs during data processing.
     """
     try:
         for currency_code in CURRENCY_CODES:
             df = get_exchange_rates(currency_code)
-
             if df is not None:
                 logging.debug(f"Data before sending: {df}")
                 connector_db.upsert(table_name=config.TABLE_NAME, df=df)
@@ -96,37 +78,29 @@ def send_df_to_db():
                 )
     except Exception as e:
         logging.error(f"Error occurred during data processing: {str(e)}")
-
-
 def get_record_from_db(currency_code: str):
     """Get records from the database where the 'currency' column matches the given value.
-
     Args:
         table_name (str): Name of the table.
         currency_code (str): The value to match in the 'currency' column.
-
         Returns:
             pd.DataFrame: DataFrame containing records that match the criteria.
     """
     try:
         table = connector_db.get_table(table_name=config.TABLE_NAME)
-
-        query = table.select().where(table.c.currency == currency_code)
-
-        df = pd.read_sql_query(query, con=connector_db)
+        query = select([table]).where(table.c.currency == currency_code)
+        result = connector_db.engine.execute(query)
+        # Converting the result to a DataFrame
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
         return df
     except Exception as error:
         logging.error(f"Failed to retrieve records from the database: {error}")
         raise
-
-
 def get_data_by_currency(currency_code):
     """
     Retrieve exchange rate data from the database for a specific currency code.
-
     Args:
         currency_code (str): The currency code to filter records.
-
     Returns:
         dict or None: A dictionary representing exchange rate data with keys:
             - "date": Date of the exchange rate.
@@ -134,8 +108,7 @@ def get_data_by_currency(currency_code):
             - "value": Currency rate.
             None if no records are found.
     """
-    df = connector_db.get_record_from_db(config.TABLE_NAME, currency_code)
-
+    df = get_record_from_db(currency_code)
     if not df.empty:
         row = df.iloc[0]
         rate = {

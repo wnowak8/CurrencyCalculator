@@ -1,6 +1,7 @@
 version: "3.8"
 services:
   backend-app:
+    hostname: backend-app
     build:
       context: ./
       dockerfile: backend/Dockerfile
@@ -13,6 +14,7 @@ services:
     networks:
       - mynetwork
   database:
+    hostname: database
     image: postgres:latest
     env_file: ./backend/.env
     volumes:
@@ -24,6 +26,7 @@ services:
     networks:
       - mynetwork
   frontend-app:
+    hostname: frontend-app
     build:
       context: ./
       dockerfile: frontend/Dockerfile
