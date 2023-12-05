@@ -5,6 +5,13 @@ import "./App.css";
 
 const currencies = ["USD", "EUR", "PLN"];
 
+const customStyles = {
+  control: (provided) => ({
+    ...provided,
+    minWidth: 100
+  }),
+};
+
 const CurrencyCalculator = () => {
   const [amount, setAmount] = useState(1);
   const [fromCurrency, setFromCurrency] = useState({ value: "USD", label: "USD" });
@@ -16,7 +23,7 @@ const CurrencyCalculator = () => {
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
-        const response = await fetch(`http://backend:5000/rate/${fromCurrency.value}`
+        const response = await fetch(`http://backend-app:5000/rate/${fromCurrency.value}`
           
         );
         const data = await response.json();
@@ -69,6 +76,7 @@ const CurrencyCalculator = () => {
               value={fromCurrency}
               onChange={handleFromCurrencyChange}
               options={currencies.map(currency => ({ value: currency, label: currency }))}
+              styles={customStyles}
             />
           </div>
         </div>
@@ -83,6 +91,7 @@ const CurrencyCalculator = () => {
               value={toCurrency}
               onChange={handleToCurrencyChange}
               options={currencies.map(currency => ({ value: currency, label: currency }))}
+              styles={customStyles}
             />
           </div>
         </div>

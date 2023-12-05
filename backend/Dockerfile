@@ -1,11 +1,10 @@
 FROM python:3.8-slim
 
-WORKDIR /task
+WORKDIR /flask-app
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
-CMD python3 main.py
+ENTRYPOINT ["python3", "backend/main.py"]

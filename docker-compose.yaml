@@ -1,9 +1,9 @@
-version: '3.8'
+version: "3.8"
 services:
-  backend:
+  backend-app:
     build:
-      context: ./backend
-      dockerfile: ./backend/docker/Dockerfile
+      context: ./
+      dockerfile: backend/Dockerfile
     ports:
       - "5000:5000"
     depends_on:
@@ -12,7 +12,6 @@ services:
     restart: always
     networks:
       - mynetwork
-
   database:
     image: postgres:latest
     env_file: ./backend/.env
@@ -20,29 +19,23 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "5452:5432"
     restart: always
     networks:
       - mynetwork
-
-
-  frontend:
-    image: node:14
-    working_dir: /app
-    command: "npm start"
-    volumes:
-      - ./frontend:/app
+  frontend-app:
+    build:
+      context: ./
+      dockerfile: frontend/Dockerfile
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      - backend-app
     restart: always
     networks:
       - mynetwork
-
 networks:
   mynetwork:
     driver: bridge
-
 volumes:
   postgres_data:

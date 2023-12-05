@@ -63,6 +63,7 @@ def get_rate(currency_code):
 
 
 if __name__ == '__main__':
-    scheduler.add_job(func=send_df_to_db, trigger="cron", hour=10, minute=21)
+    send_df_to_db()
+    scheduler.add_job(func=send_df_to_db, trigger="cron", hour=1, minute=30)
     scheduler.start()
     flask_app.run(debug=True)
