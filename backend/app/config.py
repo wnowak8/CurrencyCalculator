@@ -5,3 +5,7 @@ TABLE_NAME = "exchange_rates"
 
 # Logging mode for the application (e.g., "INFO", "DEBUG", "ERROR")
 LOGGING_MODE = "INFO"
+
+# List of currency codes
+CURRENCY_CODES = ["usd", "eur"]
+

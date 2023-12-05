@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Select from 'react-select';
+import Select from "react-select";
+import axios from "axios";
 
 import "./App.css";
 
@@ -8,32 +9,43 @@ const currencies = ["USD", "EUR", "PLN"];
 const customStyles = {
   control: (provided) => ({
     ...provided,
-    minWidth: 100
+    minWidth: 100,
   }),
 };
 
 const CurrencyCalculator = () => {
   const [amount, setAmount] = useState(1);
-  const [fromCurrency, setFromCurrency] = useState({ value: "USD", label: "USD" });
-  const [toCurrency, setToCurrency] = useState({ value: "EUR", label: "EUR" });
-  const [exchangeRate, setExchangeRate] = useState(null);
+  const [fromCurrency, setFromCurrency] = useState({
+    value: "USD",
+    label: "USD",
+  });
+
+  const [toCurrency, setToCurrency] = useState({
+    value: "EUR",
+    label: "EUR",
+  });
+
+  const [exchangeRate, setExchangeRate] = useState(1);
   const [convertedAmount, setConvertedAmount] = useState(null);
   const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
-        const response = await fetch(`http://backend-app:5000/rate/${fromCurrency.value}`
-          
+        const response = await axios.get(
+          `http://backend-app:5000/rate/${fromCurrency.value}`
         );
-        const data = await response.json();
-        setExchangeRate(data.rates[toCurrency.value]);
-        setShowResult(false);
+        console.log("response", response);
+        if (response && response.data && response.data.value !== undefined) {
+          setExchangeRate(response.data.value);
+          setShowResult(false);
+        } else {
+          console.error("Invalid data format:", response.data);
+        }
       } catch (error) {
         console.error("Error fetching exchange rate:", error);
       }
     };
-
     fetchExchangeRate();
   }, [fromCurrency, toCurrency]);
 
@@ -57,7 +69,8 @@ const CurrencyCalculator = () => {
     setToCurrency(selectedOption);
   };
 
-  const handleCalculate = () => {
+  const handleCalculate = (e) => {
+    e.preventDefault();
     setShowResult(true);
   };
 
@@ -68,20 +81,27 @@ const CurrencyCalculator = () => {
         <div className="input-select-container">
           <div className="input-container">
             <label className="input-label">Kwota:</label>
-            <input type="number" value={amount} onChange={handleAmountChange} />
+            <input
+              type="number"
+              value={amount}
+              onChange={handleAmountChange}
+            />
           </div>
           <div className="select-container">
             <label className="select-label">Mam:</label>
             <Select
               value={fromCurrency}
               onChange={handleFromCurrencyChange}
-              options={currencies.map(currency => ({ value: currency, label: currency }))}
+              options={currencies.map((currency) => ({
+                value: currency,
+                label: currency,
+              }))}
               styles={customStyles}
             />
           </div>
         </div>
         <div className="equals">=</div>
-        <div className={`output-container ${showResult ? 'visible' : ''}`}>
+        <div className={`output-container ${showResult ? "visible" : ""}`}>
           <label className="output-label">Chcę:</label>
           <div className="output-select-container">
             <div className="output">
@@ -90,13 +110,18 @@ const CurrencyCalculator = () => {
             <Select
               value={toCurrency}
               onChange={handleToCurrencyChange}
-              options={currencies.map(currency => ({ value: currency, label: currency }))}
+              options={currencies.map((currency) => ({
+                value: currency,
+                label: currency,
+              }))}
               styles={customStyles}
             />
           </div>
         </div>
       </div>
-      <button className="btn" onClick={handleCalculate}>Przelicz</button>
+      <button className="btn" onClick={handleCalculate}>
+        Przelicz
+      </button>
     </div>
   );
 };

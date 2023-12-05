@@ -1,8 +1,10 @@
 """
 Database Connector Module
+
 This module contains a class, Connector_DB, that serves as a connector to a relational database.
 It provides methods for retrieving tables, writing DataFrame records to the database, and initializing
 a database engine using SQLAlchemy.
+
 Classes:
     Connector_DB: A database connector class.
 """
@@ -10,7 +12,8 @@ import logging
 import pandas as pd
 from sqlalchemy.orm import registry
 from sqlalchemy.dialects import postgresql
-from sqlalchemy import create_engine, Table, inspect, MetaData
+from sqlalchemy import create_engine, inspect, MetaData
+
 class Connector_DB:
     def __init__(self, db_driver, db_address, db_port, db_name, db_user, db_password):
         """
@@ -37,6 +40,7 @@ class Connector_DB:
         )
         # Mapper registry for the database
         self.mapper_registry = registry()
+
     def get_table(self, table_name: str):
         """Get a specific table from the database.
         Args:
@@ -51,6 +55,7 @@ class Connector_DB:
         except Exception as error:
             logging.error(f"Could not get table {table_name}: {error}")
             raise
+
     def send_df_to_db(self, table_name: str, df: pd.DataFrame, schema=None):
         """Write records stored in a DataFrame to the database.
         Args:
@@ -71,9 +76,11 @@ class Connector_DB:
             logging.info("Successfully wrote data to the database")
         except Exception as error:
             logging.error(f"Failed to write data to the database: {error}")
+
     def upsert(self, table_name: str, df: pd.DataFrame) -> None:
         """
-        Inserts DataFrame records into the database, updating existing records with matching keys or inserting new records if the key does not exist.
+        Inserts DataFrame records into the database, updating existing records with
+        matching keys or inserting new records if the key does not exist.
         Args:
             table_name (str): Name of the table.
             df (DataFrame): Data to be saved in the database.
