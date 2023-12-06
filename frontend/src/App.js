@@ -88,7 +88,7 @@ const CurrencyCalculator = () => {
             />
           </div>
           <div className="select-container">
-            <label className="select-label">Mam:</label>
+            <label className="select-label">Z waluty:</label>
             <Select
               value={fromCurrency}
               onChange={handleFromCurrencyChange}
@@ -102,7 +102,7 @@ const CurrencyCalculator = () => {
         </div>
         <div className="equals">=</div>
         <div className={`output-container ${showResult ? "visible" : ""}`}>
-          <label className="output-label">Chcę:</label>
+          <label className="output-label">Na walutę:</label>
           <div className="output-select-container">
             <div className="output">
               {showResult && <p>{convertedAmount}</p>}
